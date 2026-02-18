@@ -119,7 +119,7 @@ Frontend runs on [http://localhost:3000](http://localhost:3000)
 
 MongoDB URI is configured in `backend/.env`:
 ```
-mongodb+srv://hatem:87h0u74H@cluster0.5mzimdd.mongodb.net/mariposa-financial-system
+mongodb+srv://*****:******@cluster0.5mzimdd.mongodb.net/mariposa-financial-system
 ```
 
 ## Default User Roles
