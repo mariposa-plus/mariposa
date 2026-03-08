@@ -207,7 +207,7 @@ export interface ComponentSchema {
 
 // Field configuration for component config forms
 export interface ConfigField {
-  type: 'text' | 'password' | 'number' | 'select' | 'textarea' | 'toggle' | 'multi-select' | 'json' | 'code' | 'text-template' | 'prompt-template' | 'monaco-solidity' | 'chain-select';
+  type: 'text' | 'password' | 'number' | 'select' | 'textarea' | 'toggle' | 'multi-select' | 'json' | 'code' | 'text-template' | 'prompt-template' | 'monaco-solidity' | 'chain-select' | 'cron-expression' | 'headers' | 'data-transform' | 'condition-builder' | 'contract-address' | 'evm-function-call';
   label: string;
   placeholder?: string;
   required?: boolean;

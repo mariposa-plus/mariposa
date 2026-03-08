@@ -19,6 +19,12 @@ export const CRE_LOGIC_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       aggregationMethod: {
         type: 'select',
         label: 'Aggregation Method',
@@ -66,18 +72,17 @@ export const CRE_LOGIC_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
-      transformExpression: {
-        type: 'code',
-        label: 'Transform Expression',
-        placeholder: '// Access input via "data"\nconst result = JSON.parse(data.body);\nreturn result.price;',
-        required: true,
-        helpText: 'JavaScript expression. Access upstream data via "data" variable.',
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
       },
-      outputSchema: {
-        type: 'json',
-        label: 'Output Schema',
-        placeholder: '{"type": "number"}',
-        helpText: 'Optional JSON schema describing the output shape',
+      transformExpression: {
+        type: 'data-transform',
+        label: 'Transform Expression',
+        required: true,
+        helpText: 'Define how input data is transformed.',
       },
     },
     inputs: [
@@ -98,17 +103,23 @@ export const CRE_LOGIC_COMPONENTS: Record<string, ComponentSchema> = {
     type: 'cre',
     handles: {
       hasTopHandle: true,
-      hasBottomHandle: true,
-      hasLeftHandle: true,
-      hasRightHandle: true,
+      hasBottomHandle: false,
+      hasLeftHandle: false,
+      hasRightHandle: false,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       expression: {
-        type: 'code',
+        type: 'condition-builder',
         label: 'Condition Expression',
         placeholder: '// Return true or false\nreturn data.price > 1000;',
         required: true,
-        helpText: 'JavaScript expression that evaluates to true/false. Access input via "data".',
+        helpText: 'Build conditions visually or write JavaScript that evaluates to true/false.',
       },
       trueLabel: {
         type: 'text',
@@ -143,6 +154,12 @@ export const CRE_LOGIC_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       types: {
         type: 'text',
         label: 'ABI Types',
@@ -180,6 +197,12 @@ export const CRE_LOGIC_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       types: {
         type: 'text',
         label: 'ABI Types',

@@ -181,6 +181,12 @@ export const SOLIDITY_CONTRACT_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       contractName: {
         type: 'text',
         label: 'Contract Name',
@@ -231,6 +237,12 @@ export const SOLIDITY_CONTRACT_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       contractName: {
         type: 'text',
         label: 'Contract Name',
@@ -275,6 +287,12 @@ export const SOLIDITY_CONTRACT_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       contractName: {
         type: 'text',
         label: 'Contract Name',
@@ -317,6 +335,12 @@ export const SOLIDITY_CONTRACT_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       contractName: {
         type: 'text',
         label: 'Contract Name',
@@ -354,6 +378,12 @@ export const SOLIDITY_CONTRACT_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       contractName: {
         type: 'text',
         label: 'Contract Name',

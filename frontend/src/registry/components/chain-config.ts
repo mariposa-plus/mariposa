@@ -20,6 +20,12 @@ export const CHAIN_CONFIG_COMPONENTS: Record<string, ComponentSchema> = {
       hasRightHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       chainSelector: {
         type: 'chain-select',
         label: 'Chain',
@@ -61,6 +67,12 @@ export const CHAIN_CONFIG_COMPONENTS: Record<string, ComponentSchema> = {
       hasRightHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       address: {
         type: 'text',
         label: 'Contract Address',
@@ -101,14 +113,28 @@ export const CHAIN_CONFIG_COMPONENTS: Record<string, ComponentSchema> = {
       hasRightHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       signerType: {
         type: 'select',
         label: 'Signer Type',
         defaultValue: 'envVar',
         options: [
           { value: 'envVar', label: 'Environment Variable' },
+          { value: 'custom', label: 'Custom Private Key' },
           { value: 'secret', label: 'CRE Secret (Vault DON)' },
         ],
+      },
+      privateKey: {
+        type: 'password',
+        label: 'Private Key',
+        placeholder: '0x... or 64-char hex',
+        dependsOn: 'signerType:custom',
+        helpText: 'Your EOA private key (64-char hex). Stored only in the project .env file, never in the pipeline config.',
       },
       envVarName: {
         type: 'text',
@@ -145,6 +171,12 @@ export const CHAIN_CONFIG_COMPONENTS: Record<string, ComponentSchema> = {
       hasRightHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       chainSelectorName: {
         type: 'chain-select',
         label: 'Chain',

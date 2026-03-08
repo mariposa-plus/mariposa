@@ -44,7 +44,7 @@ export const GenericNode = memo(({ data }: NodeProps) => {
     <NodeWrapper
       id={data.id}
       icon={IconComponent}
-      label={component.name}
+      label={data.config?.title || component.name}
       color={component.color}
       state={data.state}
       componentType={component.type}
@@ -61,7 +61,7 @@ export const GenericNode = memo(({ data }: NodeProps) => {
       {/* Display key configuration values if available */}
       {data.config && Object.keys(data.config).length > 0 && (
         <div style={{ marginTop: '10px', fontSize: '11px', color: '#888' }}>
-          {Object.entries(data.config).slice(0, 3).map(([key, value]) => (
+          {Object.entries(data.config).filter(([key]) => key !== 'title').slice(0, 3).map(([key, value]) => (
             <div key={key} style={{ marginBottom: '4px' }}>
               <strong>{key}:</strong>{' '}
               {typeof value === 'object' ? JSON.stringify(value).slice(0, 30) + '...' : String(value).slice(0, 30)}

@@ -20,8 +20,14 @@ export const CRE_TRIGGER_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
-      cronExpression: {
+      title: {
         type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
+      cronExpression: {
+        type: 'cron-expression',
         label: 'Cron Expression',
         placeholder: '0 */5 * * * *',
         required: true,
@@ -61,6 +67,12 @@ export const CRE_TRIGGER_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       path: {
         type: 'text',
         label: 'Endpoint Path',
@@ -110,6 +122,12 @@ export const CRE_TRIGGER_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       contractAddress: {
         type: 'text',
         label: 'Contract Address',

@@ -5,6 +5,7 @@
  */
 
 import { GenericNode } from '@/components/nodes/GenericNode';
+import { ConditionNode } from '@/components/nodes/ConditionNode';
 
 export const createNodeTypes = () => ({
   // CRE Triggers
@@ -22,7 +23,7 @@ export const createNodeTypes = () => ({
   // CRE Logic
   'consensus-aggregation': GenericNode,
   'data-transform': GenericNode,
-  'condition': GenericNode,
+  'condition': ConditionNode,
   'abi-encode': GenericNode,
   'abi-decode': GenericNode,
 

@@ -19,6 +19,12 @@ export const CRE_CAPABILITY_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       url: {
         type: 'text',
         label: 'URL',
@@ -39,16 +45,15 @@ export const CRE_CAPABILITY_COMPONENTS: Record<string, ComponentSchema> = {
         ],
       },
       headers: {
-        type: 'json',
+        type: 'headers',
         label: 'Headers',
-        placeholder: '{"Content-Type": "application/json"}',
-        helpText: 'JSON object of request headers',
+        helpText: 'HTTP request headers',
       },
       body: {
         type: 'json',
         label: 'Request Body',
         placeholder: '{"key": "value"}',
-        dependsOn: 'method:POST',
+        dependsOn: 'method:POST,PUT,PATCH',
         helpText: 'JSON request body (for POST/PUT/PATCH)',
       },
       timeout: {
@@ -81,6 +86,12 @@ export const CRE_CAPABILITY_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       contractAddress: {
         type: 'text',
         label: 'Contract Address',
@@ -133,8 +144,14 @@ export const CRE_CAPABILITY_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
-      contractAddress: {
+      title: {
         type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
+      contractAddress: {
+        type: 'contract-address',
         label: 'Contract Address',
         placeholder: '0x...',
         required: true,
@@ -142,11 +159,10 @@ export const CRE_CAPABILITY_COMPONENTS: Record<string, ComponentSchema> = {
         helpText: 'Address of the IReceiver consumer contract',
       },
       dataToEncode: {
-        type: 'json',
-        label: 'Data to Encode',
-        placeholder: '{"types": ["uint256"], "values": [42]}',
+        type: 'evm-function-call',
+        label: 'Function Call',
         required: true,
-        helpText: 'ABI types and values to encode for the report',
+        helpText: 'Define the contract function and parameters to encode',
       },
       chainSelector: {
         type: 'chain-select',
@@ -182,6 +198,12 @@ export const CRE_CAPABILITY_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       aggregationMethod: {
         type: 'select',
         label: 'Aggregation Method',
@@ -227,6 +249,12 @@ export const CRE_CAPABILITY_COMPONENTS: Record<string, ComponentSchema> = {
       hasBottomHandle: true,
     },
     configSchema: {
+      title: {
+        type: 'text',
+        label: 'Node Title',
+        placeholder: 'Enter node title...',
+        helpText: 'Custom label for this node (shown on canvas)',
+      },
       secretName: {
         type: 'text',
         label: 'Secret Name',
