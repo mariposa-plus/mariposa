@@ -10,6 +10,7 @@
 export interface CopilotAction {
   action: 'add_node' | 'update_node' | 'delete_node' | 'add_edge' | 'delete_edge';
   // add_node
+  placeholder_id?: string;
   node_type?: string;
   label?: string;
   config?: Record<string, any>;
@@ -117,7 +118,7 @@ When you want to modify the canvas, include a JSON code block tagged \`\`\`actio
 Each action is an object with an "action" field and relevant properties:
 
 1. **add_node** – Add a new node to the canvas
-   { "action": "add_node", "node_type": "<id from list above>", "label": "Human-readable name", "config": { ... }, "position": { "x": <number>, "y": <number> } }
+   { "action": "add_node", "placeholder_id": "NEW_1", "node_type": "<id from list above>", "label": "Human-readable name", "config": { ... }, "position": { "x": <number>, "y": <number> } }
 
 2. **update_node** – Update an existing node's configuration
    { "action": "update_node", "node_id": "<existing node id>", "label": "<optional new label>", "config": { ... } }
@@ -138,22 +139,22 @@ I'll create a workflow with a cron trigger, HTTP fetch for price data, a data tr
 
 \`\`\`actions
 [
-  { "action": "add_node", "node_type": "cron-trigger", "label": "Every 5 Min", "config": { "schedule": "*/5 * * * *" }, "position": { "x": 100, "y": 200 } },
-  { "action": "add_node", "node_type": "http-fetch", "label": "Fetch ETH Price", "config": { "url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd", "method": "GET" }, "position": { "x": 350, "y": 200 } },
-  { "action": "add_node", "node_type": "data-transform", "label": "Extract Price", "config": { "expression": "input.ethereum.usd" }, "position": { "x": 600, "y": 200 } },
-  { "action": "add_node", "node_type": "abi-encode", "label": "Encode Price", "config": { "types": ["uint256"], "values": ["price"] }, "position": { "x": 850, "y": 200 } },
-  { "action": "add_node", "node_type": "evm-write", "label": "Write On-Chain", "config": { "contractAddress": "0x...", "method": "updatePrice", "args": ["encodedData"] }, "position": { "x": 1100, "y": 200 } },
-  { "action": "add_edge", "source": "cron-trigger-<ts>", "target": "http-fetch-<ts>", "condition": { "type": "immediate" } },
-  { "action": "add_edge", "source": "http-fetch-<ts>", "target": "data-transform-<ts>", "condition": { "type": "immediate" } },
-  { "action": "add_edge", "source": "data-transform-<ts>", "target": "abi-encode-<ts>", "condition": { "type": "immediate" } },
-  { "action": "add_edge", "source": "abi-encode-<ts>", "target": "evm-write-<ts>", "condition": { "type": "immediate" } }
+  { "action": "add_node", "placeholder_id": "NEW_1", "node_type": "cron-trigger", "label": "Every 5 Min", "config": { "schedule": "*/5 * * * *" }, "position": { "x": 100, "y": 200 } },
+  { "action": "add_node", "placeholder_id": "NEW_2", "node_type": "http-fetch", "label": "Fetch ETH Price", "config": { "url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd", "method": "GET" }, "position": { "x": 350, "y": 200 } },
+  { "action": "add_node", "placeholder_id": "NEW_3", "node_type": "data-transform", "label": "Extract Price", "config": { "expression": "input.ethereum.usd" }, "position": { "x": 600, "y": 200 } },
+  { "action": "add_node", "placeholder_id": "NEW_4", "node_type": "abi-encode", "label": "Encode Price", "config": { "types": ["uint256"], "values": ["price"] }, "position": { "x": 850, "y": 200 } },
+  { "action": "add_node", "placeholder_id": "NEW_5", "node_type": "evm-write", "label": "Write On-Chain", "config": { "contractAddress": "0x...", "method": "updatePrice", "args": ["encodedData"] }, "position": { "x": 1100, "y": 200 } },
+  { "action": "add_edge", "source": "NEW_1", "target": "NEW_2", "condition": { "type": "immediate" } },
+  { "action": "add_edge", "source": "NEW_2", "target": "NEW_3", "condition": { "type": "immediate" } },
+  { "action": "add_edge", "source": "NEW_3", "target": "NEW_4", "condition": { "type": "immediate" } },
+  { "action": "add_edge", "source": "NEW_4", "target": "NEW_5", "condition": { "type": "immediate" } }
 ]
 \`\`\`
 
 ## Important Rules
 - Always include a natural language explanation BEFORE the actions block.
 - Only use node_type values from the Available Node Types list above.
-- When adding edges that reference newly added nodes, use a placeholder like "NEW_1", "NEW_2" etc. The frontend will replace these with the real generated IDs.
+- Every add_node MUST include a "placeholder_id" field ("NEW_1", "NEW_2", … numbered sequentially). Use these placeholder IDs as "source"/"target" in add_edge actions. The frontend replaces them with real generated IDs.
 - Position nodes in a logical left-to-right flow. Use x increments of ~250 and keep y around 200 for a single row.
 - For update_node, only include config fields that should change (they will be merged).
 - If the user asks a question that does NOT require canvas changes, just respond with text (no actions block).
