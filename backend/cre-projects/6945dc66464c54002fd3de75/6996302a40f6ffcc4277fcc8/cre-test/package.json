@@ -1,0 +1,12 @@
+{
+  "name": "cre-test",
+  "version": "1.0.0",
+  "dependencies": {
+    "@chainlink/cre-sdk": "^1.0.7",
+    "viem": "^2.0.0",
+    "zod": "^3.0.0"
+  },
+  "scripts": {
+    "postinstall": "bunx cre-setup"
+  }
+}

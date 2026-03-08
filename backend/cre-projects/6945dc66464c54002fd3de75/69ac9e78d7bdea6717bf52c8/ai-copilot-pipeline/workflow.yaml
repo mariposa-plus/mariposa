@@ -1,0 +1,10 @@
+workflow-name: ai-copilot-pipeline
+workflow-owner: "0x0000000000000000000000000000000000000000"
+workflow-artifacts:
+  workflow-path: ./main.ts
+  config-path: ./config.staging.json
+targets:
+  staging-settings:
+    config-path: ./config.staging.json
+  production-settings:
+    config-path: ./config.production.json

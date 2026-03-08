@@ -137,3 +137,12 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# CRE project sensitive files and build artifacts
+backend/cre-projects/**/.env
+backend/cre-projects/**/secrets.yaml
+backend/cre-projects/**/node_modules/
+backend/cre-projects/**/*.wasm
+backend/cre-projects/**/tmp.js
+backend/cre-projects/**/.cre_build_tmp.js
+backend/cre-projects/**/bun.lock

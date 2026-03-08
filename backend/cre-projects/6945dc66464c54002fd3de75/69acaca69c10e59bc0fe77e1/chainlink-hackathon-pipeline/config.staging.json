@@ -1,0 +1,10 @@
+{
+  "schedule": "0 */5 * * * *",
+  "apiUrl": "https://api.coingecko.com/api/v3/simple/price?ids=usd-coin&vs_currencies=usd",
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "contractAddress": "0xc6744B919963B2a4787c34f946542E8217f91A51"
+    }
+  ]
+}

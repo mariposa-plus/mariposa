@@ -4,5 +4,4 @@ dist
 *.log
 .DS_Store
 .tsbuildinfo
-cre-projects/*
-!cre-projects/.gitkeep
+!cre-projects/

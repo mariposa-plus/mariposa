@@ -1,0 +1,14 @@
+{
+  "schedule": "0 */5 * * * *",
+  "apiUrl": "https://discord.com/api/webhooks/YOUR_WEBHOOK",
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "contractAddress": "0x694AA1769357215DE4FAC081bf1f309aDC325306"
+    },
+    {
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "contractAddress": "0x1234567890abcdef1234567890abcdef12345678"
+    }
+  ]
+}
