@@ -71,12 +71,12 @@ class CRECodeGeneratorService {
 
 ${configSchema}
 
-const onTrigger = (runtime: Runtime<Config>, payload: ${triggerPayloadType}): string => {
-${callbackBody}
-  return "complete"
-}
-
 const initWorkflow = (config: Config) => {
+  const onTrigger = (runtime: Runtime<Config>, payload: ${triggerPayloadType}): string => {
+${callbackBody}
+    return "complete"
+  }
+
 ${triggerCode}
 }
 
@@ -168,6 +168,12 @@ main()
     if (types.has('evm-read') || types.has('evm-write')) {
       coreImports.push('getNetwork', 'encodeCallMsg');
     }
+    if (types.has('evm-write')) {
+      coreImports.push('prepareReportRequest');
+    }
+    if (types.has('evm-read')) {
+      coreImports.push('LAST_FINALIZED_BLOCK_NUMBER');
+    }
 
     imports.push(`import { ${coreImports.join(', ')}, type ${typeImports.join(', type ')} } from "@chainlink/cre-sdk"`);
     imports.push(`import { z } from "zod"`);
@@ -201,7 +207,7 @@ main()
     // API URL from HTTP fetch nodes
     const httpNodes = nodes.filter(n => n.type === 'http-fetch');
     if (httpNodes.length > 0) {
-      fields.push('  apiUrl: z.string().url()');
+      fields.push('  apiUrl: z.string().optional()');
     }
 
     if (hasChainConfig || hasContract) {
@@ -278,10 +284,12 @@ type Config = z.infer<typeof configSchema>`;
   private generateCallbackBody(sortedNodes: PipelineNode[], edges: PipelineEdge[]): string {
     const lines: string[] = [];
     const varMap = new Map<string, string>(); // nodeId -> variable name
+    const openConditions: string[] = []; // stack of condition variable names for if-block nesting
 
     for (const node of sortedNodes) {
       const varName = this.sanitizeVarName(node.id);
       const config = node.data?.fullConfig?.component || node.data?.config || {};
+      const startIdx = lines.length;
 
       switch (node.type) {
         case 'http-fetch': {
@@ -311,25 +319,27 @@ type Config = z.infer<typeof configSchema>`;
           lines.push(`  }).chainSelector.selector)`);
           lines.push(`  const ${varName} = evmClient_${varName}.callContract(runtime, {`);
           lines.push(`    call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000", to: config.evms[0].contractAddress, data: "0x" }),`);
-          lines.push(`    blockNumber: "LAST_FINALIZED_BLOCK_NUMBER",`);
+          lines.push(`    blockNumber: LAST_FINALIZED_BLOCK_NUMBER,`);
           lines.push(`  }).result()`);
           break;
         }
 
         case 'evm-write': {
+          const upstreamVar = this.findUpstreamVar(node.id, edges, varMap);
           lines.push(`  // EVM Write: ${node.data.label || 'On-chain Write'}`);
           lines.push(`  const evmClient_${varName} = new cre.capabilities.EVMClient(getNetwork({`);
           lines.push(`    chainFamily: "evm",`);
           lines.push(`    chainSelectorName: config.evms[0].chainSelectorName,`);
           lines.push(`    isTestnet: true,`);
           lines.push(`  }).chainSelector.selector)`);
-          lines.push(`  const report_${varName} = evmClient_${varName}.generateReport(runtime, {`);
-          lines.push(`    data: "0x", // TODO: Encode data from upstream`);
-          lines.push(`  }).result()`);
+          lines.push(`  const reportData_${varName} = encodeAbiParameters(`);
+          lines.push(`    parseAbiParameters("${config.abiTypes || 'uint256'}"),`);
+          lines.push(`    [${upstreamVar !== '{}' ? upstreamVar : '0'}]`);
+          lines.push(`  )`);
+          lines.push(`  const report_${varName} = runtime.report(prepareReportRequest(reportData_${varName})).result()`);
           lines.push(`  evmClient_${varName}.writeReport(runtime, {`);
+          lines.push(`    receiver: config.evms[0].contractAddress,`);
           lines.push(`    report: report_${varName},`);
-          lines.push(`    contractAddress: config.evms[0].contractAddress,`);
-          lines.push(`    gasLimit: ${config.gasLimit || 1000000}n,`);
           lines.push(`  }).result()`);
           lines.push(`  runtime.log("Report written on-chain")`);
           break;
@@ -356,16 +366,38 @@ type Config = z.infer<typeof configSchema>`;
         }
 
         case 'data-transform': {
+          const expression = config.transformExpression;
+          const upstreamVar = this.findUpstreamVar(node.id, edges, varMap);
           lines.push(`  // Transform: ${node.data.label || 'Data Transform'}`);
-          lines.push(`  // TODO: Apply transform expression from config`);
-          lines.push(`  const ${varName} = null // Transform result`);
+          if (expression) {
+            lines.push(`  const ${varName} = (() => {`);
+            lines.push(`    const data = ${upstreamVar};`);
+            for (const line of expression.split('\n')) {
+              lines.push(`    ${line}`);
+            }
+            lines.push(`  })()`);
+            lines.push(`  runtime.log(\`Transform result: \${JSON.stringify(${varName})}\`)`);
+          } else {
+            lines.push(`  const ${varName} = ${upstreamVar} // No transform expression, pass-through`);
+          }
           break;
         }
 
         case 'condition': {
+          const expression = config.expression;
+          const upstreamVar = this.findUpstreamVar(node.id, edges, varMap);
           lines.push(`  // Condition: ${node.data.label || 'Branch'}`);
-          lines.push(`  // TODO: Evaluate condition expression`);
-          lines.push(`  const ${varName} = true // Condition result`);
+          if (expression) {
+            lines.push(`  const ${varName} = (() => {`);
+            lines.push(`    const data = ${upstreamVar};`);
+            for (const line of expression.split('\n')) {
+              lines.push(`    ${line}`);
+            }
+            lines.push(`  })()`);
+            lines.push(`  runtime.log(\`Condition result: \${${varName}}\`)`);
+          } else {
+            lines.push(`  const ${varName} = true // No condition expression configured`);
+          }
           break;
         }
 
@@ -400,11 +432,41 @@ type Config = z.infer<typeof configSchema>`;
           break;
       }
 
+      // Indent lines generated by this node if inside a condition block
+      if (openConditions.length > 0) {
+        const extraIndent = '  '.repeat(openConditions.length);
+        for (let i = startIdx; i < lines.length; i++) {
+          if (lines[i]) lines[i] = extraIndent + lines[i];
+        }
+      }
+
       varMap.set(node.id, varName);
       lines.push('');
+
+      // After a condition node, open an if block for downstream nodes
+      if (node.type === 'condition') {
+        const condIndent = '  ' + '  '.repeat(openConditions.length);
+        lines.push(`${condIndent}if (${varName}) {`);
+        openConditions.push(varName);
+      }
+    }
+
+    // Close all open condition if-blocks
+    while (openConditions.length > 0) {
+      openConditions.pop();
+      const closeIndent = '  ' + '  '.repeat(openConditions.length);
+      lines.push(`${closeIndent}}`);
     }
 
     return lines.join('\n');
+  }
+
+  private findUpstreamVar(nodeId: string, edges: PipelineEdge[], varMap: Map<string, string>): string {
+    const incomingEdge = edges.find(e => e.target === nodeId);
+    if (incomingEdge && varMap.has(incomingEdge.source)) {
+      return varMap.get(incomingEdge.source)!;
+    }
+    return '{}';
   }
 
   private sanitizeVarName(nodeId: string): string {
