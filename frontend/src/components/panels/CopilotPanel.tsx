@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 
 interface CopilotAction {
   action: 'add_node' | 'update_node' | 'delete_node' | 'add_edge' | 'delete_edge';
+  placeholder_id?: string;
   node_type?: string;
   label?: string;
   config?: Record<string, any>;
