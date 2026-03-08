@@ -404,7 +404,94 @@ export const handleOAuthRedirect = async (req: Request, res: Response) => {
   }
 };
 
+// --- Pipeline-based private key update (resolves project from pipeline) ---
+
+export const updateSecretsByPipeline = async (req: Request, res: Response) => {
+  try {
+    const { key } = req.body;
+    if (!key) {
+      return res.status(400).json({ success: false, message: 'key is required' });
+    }
+
+    const pipeline = await Pipeline.findById(req.params.pipelineId);
+    if (!pipeline) {
+      return res.status(404).json({ success: false, message: 'Pipeline not found' });
+    }
+
+    let projectId = pipeline.creProjectId?.toString();
+    if (!projectId) {
+      const creProject = await creProjectManager.createProject(
+        (req as any).user.id,
+        pipeline.name,
+        pipeline.description
+      );
+      pipeline.creProjectId = creProject._id;
+      await pipeline.save();
+      projectId = creProject._id.toString();
+    }
+
+    await creProjectManager.updatePrivateKey(projectId, key);
+    res.json({ success: true, message: 'Private key updated' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // --- Pipeline-based simulation (resolves project from pipeline) ---
+
+export const requestAccessByPipeline = async (req: Request, res: Response) => {
+  try {
+    const pipeline = await Pipeline.findById(req.params.pipelineId);
+    if (!pipeline) {
+      return res.status(404).json({ success: false, message: 'Pipeline not found' });
+    }
+
+    if (!pipeline.creProjectId) {
+      return res.status(400).json({ success: false, message: 'Pipeline has no CRE project. Generate code first.' });
+    }
+
+    const { creDeployer } = await import('../services/creDeployer.service');
+    creDeployer.requestAccess(pipeline.creProjectId.toString()).catch(console.error);
+
+    res.json({ success: true, message: 'Access request started', projectId: pipeline.creProjectId });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deployByPipeline = async (req: Request, res: Response) => {
+  try {
+    const pipeline = await Pipeline.findById(req.params.pipelineId);
+    if (!pipeline) {
+      return res.status(404).json({ success: false, message: 'Pipeline not found' });
+    }
+
+    if (!pipeline.creProjectId) {
+      return res.status(400).json({ success: false, message: 'Pipeline has no CRE project. Generate code first.' });
+    }
+
+    const target = req.body.target || 'staging-settings';
+
+    const workflow = await CREWorkflow.findOne({
+      pipelineId: req.params.pipelineId,
+      projectId: pipeline.creProjectId,
+    });
+    if (!workflow?.workflowPath) {
+      return res.status(400).json({
+        success: false,
+        message: 'No workflow found for this pipeline. Please generate code first.',
+      });
+    }
+    const wfName = path.basename(path.dirname(workflow.workflowPath));
+
+    const { creDeployer } = await import('../services/creDeployer.service');
+    creDeployer.deploy(pipeline.creProjectId.toString(), wfName, target).catch(console.error);
+
+    res.json({ success: true, message: 'Deployment started', projectId: pipeline.creProjectId });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const simulateByPipeline = async (req: Request, res: Response) => {
   try {

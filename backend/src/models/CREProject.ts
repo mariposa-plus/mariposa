@@ -5,10 +5,13 @@ export interface ICREProject extends Document {
   name: string;
   description?: string;
   workspacePath: string;
-  status: 'created' | 'ready' | 'simulating' | 'error';
+  status: 'created' | 'ready' | 'simulating' | 'deploying' | 'error';
   errorMessage?: string;
   lastSimulatedAt?: Date;
   simulationLogs?: string[];
+  deploymentStatus: 'none' | 'access-requested' | 'access-granted' | 'deploying' | 'deployed' | 'deploy-failed';
+  deploymentLogs?: string[];
+  lastDeployedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,12 +39,19 @@ const CREProjectSchema = new Schema<ICREProject>(
     },
     status: {
       type: String,
-      enum: ['created', 'ready', 'simulating', 'error'],
+      enum: ['created', 'ready', 'simulating', 'deploying', 'error'],
       default: 'created',
     },
     errorMessage: String,
     lastSimulatedAt: Date,
     simulationLogs: [String],
+    deploymentStatus: {
+      type: String,
+      enum: ['none', 'access-requested', 'access-granted', 'deploying', 'deployed', 'deploy-failed'],
+      default: 'none',
+    },
+    deploymentLogs: [String],
+    lastDeployedAt: Date,
   },
   {
     timestamps: true,

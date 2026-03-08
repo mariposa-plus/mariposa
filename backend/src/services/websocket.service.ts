@@ -60,6 +60,22 @@ class WebSocketService {
   }
 
   /**
+   * Emit a deployment log line to project room
+   */
+  emitDeploymentLog(projectId: string, log: string): void {
+    if (!this.io) return;
+    this.io.to(`deploy:${projectId}`).emit('deployment:log', log);
+  }
+
+  /**
+   * Emit deployment completion event
+   */
+  emitDeploymentComplete(projectId: string, success: boolean, exitCode: number, step: 'access' | 'deploy'): void {
+    if (!this.io) return;
+    this.io.to(`deploy:${projectId}`).emit('deployment:complete', { success, exitCode, step });
+  }
+
+  /**
    * Emit compilation progress
    */
   emitCompilationProgress(contractId: string, event: { status: string; message: string }): void {

@@ -17,6 +17,9 @@ import {
   simulateWorkflow,
   getSimulationLogs,
   simulateByPipeline,
+  requestAccessByPipeline,
+  deployByPipeline,
+  updateSecretsByPipeline,
   startCRELogin,
   startCREHeadlessLogin,
   submitVerificationCode,
@@ -57,8 +60,11 @@ router.get('/projects/:id/logs', getSimulationLogs);
 router.post('/workflows/generate', generateWorkflow);
 router.get('/workflows/:id/code', getWorkflowCode);
 
-// Pipeline-based simulation (auto-resolves CRE project)
+// Pipeline-based endpoints (auto-resolves CRE project)
+router.put('/pipelines/:pipelineId/private-key', updateSecretsByPipeline);
 router.post('/pipelines/:pipelineId/simulate', simulateByPipeline);
+router.post('/pipelines/:pipelineId/request-access', requestAccessByPipeline);
+router.post('/pipelines/:pipelineId/deploy', deployByPipeline);
 
 // Contracts
 router.post('/contracts', saveContract);
