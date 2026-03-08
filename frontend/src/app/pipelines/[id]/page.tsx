@@ -27,7 +27,7 @@ import { GenericConfigForm } from '@/components/modals/config-forms/GenericConfi
 import { EdgeConditionModal } from '@/components/modals/EdgeConditionModal';
 import { TestExecutionModal } from '@/components/modals/TestExecutionModal';
 import { ConditionalEdge } from '@/components/edges/ConditionalEdge';
-import { Save, ArrowLeft, Play, Beaker, Code2, Terminal, Sparkles } from 'lucide-react';
+import { Save, ArrowLeft, Play, Beaker, Code2, Terminal, Sparkles, Rocket } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import type { NodeConfiguration, EdgeCondition } from '@/types';
 import { getComponentById } from '@/registry';
@@ -38,6 +38,7 @@ import { WorkflowCodePanel } from '@/components/panels/WorkflowCodePanel';
 import { SimulationPanel } from '@/components/panels/SimulationPanel';
 import { CopilotPanel } from '@/components/panels/CopilotPanel';
 import { CRELoginModal } from '@/components/modals/CRELoginModal';
+import { DeploymentModal } from '@/components/modals/DeploymentModal';
 import { useCREStore } from '@/store/creStore';
 import { useSimulationLogs } from '@/hooks/useSimulationLogs';
 
@@ -115,7 +116,10 @@ function PipelineBuilderContent() {
 
   // CRE auth modal state
   const [showCRELoginModal, setShowCRELoginModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'code' | 'simulate' | null>(null);
+  const [pendingAction, setPendingAction] = useState<'code' | 'simulate' | 'deploy' | null>(null);
+
+  // Deployment modal state
+  const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
 
   // Copilot panel state
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
@@ -318,6 +322,16 @@ function PipelineBuilderContent() {
     startSimulation();
   }, [startSimulation, isCreAuthenticated]);
 
+  // CRE: Deploy (with auth gate)
+  const handleDeploy = useCallback(() => {
+    if (!isCreAuthenticated) {
+      setPendingAction('deploy');
+      setShowCRELoginModal(true);
+      return;
+    }
+    setIsDeployModalOpen(true);
+  }, [isCreAuthenticated]);
+
   // Handle CRE auth success - run the pending action
   const handleCREAuthSuccess = useCallback(async () => {
     if (pendingAction === 'code' && pipelineId) {
@@ -328,6 +342,8 @@ function PipelineBuilderContent() {
     } else if (pendingAction === 'simulate') {
       setIsSimPanelOpen(true);
       startSimulation();
+    } else if (pendingAction === 'deploy') {
+      setIsDeployModalOpen(true);
     }
     setPendingAction(null);
   }, [pendingAction, pipelineId, generateWorkflow, startSimulation]);
@@ -337,7 +353,15 @@ function PipelineBuilderContent() {
     (actions: any[]) => {
       // Map placeholder IDs (NEW_1, NEW_2…) to real generated IDs
       const idMap: Record<string, string> = {};
+      const labelMap: Record<string, string> = {}; // nodeId → label
       let positionOffset = 0;
+      let addNodeCount = 0;
+      const edgeConnections: { source: string; target: string }[] = [];
+
+      // Helper to sanitize labels for use as field names
+      function sanitizeLabel(label: string): string {
+        return label.replace(/[^a-zA-Z0-9]/g, '_').replace(/^_+|_+$/g, '').replace(/_+/g, '_').toLowerCase();
+      }
 
       for (const action of actions) {
         switch (action.action) {
@@ -347,7 +371,11 @@ function PipelineBuilderContent() {
             const nodeId = `${nodeType}-${ts}`;
             positionOffset++;
 
-            // Track placeholder → real ID
+            // Auto-numbering fallback: always map NEW_{n} → real ID
+            addNodeCount++;
+            idMap[`NEW_${addNodeCount}`] = nodeId;
+
+            // Also map explicit placeholder_id if present
             if (action.placeholder_id) {
               idMap[action.placeholder_id] = nodeId;
             }
@@ -360,6 +388,9 @@ function PipelineBuilderContent() {
               else if (componentDef.category === 'chain-config') componentType = 'config';
             }
 
+            const nodeLabel = action.label || componentDef?.name || nodeType;
+            labelMap[nodeId] = nodeLabel;
+
             const pos = action.position || { x: 250 + positionOffset * 250, y: 200 };
 
             const newNode: Node = {
@@ -371,7 +402,7 @@ function PipelineBuilderContent() {
                 type: nodeType,
                 componentType,
                 state: action.config ? 'configured' : 'draft',
-                label: action.label || componentDef?.name || nodeType,
+                label: nodeLabel,
                 ...(action.config ? { config: action.config } : {}),
               },
             };
@@ -420,15 +451,24 @@ function PipelineBuilderContent() {
             const target = idMap[action.target] || action.target;
             const edgeId = `e-${source}-${target}`;
 
+            edgeConnections.push({ source, target });
+
+            const VALID_CONDITION_TYPES = ['immediate', 'delay', 'event', 'approval'];
+            const rawCondition = action.condition;
+            const condition =
+              rawCondition &&
+              typeof rawCondition.type === 'string' &&
+              VALID_CONDITION_TYPES.includes(rawCondition.type)
+                ? rawCondition
+                : { type: 'immediate' };
+
             setEdges((eds) =>
               addEdge(
                 {
                   id: edgeId,
                   source,
                   target,
-                  data: {
-                    condition: action.condition || { type: 'immediate' },
-                  },
+                  data: { condition },
                 },
                 eds,
               ),
@@ -442,6 +482,42 @@ function PipelineBuilderContent() {
             break;
           }
         }
+      }
+
+      // Auto-create input mappings for all edge targets
+      if (edgeConnections.length > 0) {
+        const targetSourceMap = new Map<string, string[]>();
+        for (const { source, target } of edgeConnections) {
+          const sources = targetSourceMap.get(target) || [];
+          sources.push(source);
+          targetSourceMap.set(target, sources);
+        }
+
+        setNodes(nds => nds.map(node => {
+          const sources = targetSourceMap.get(node.id);
+          if (!sources) return node;
+
+          const mappings = sources.map(srcId => ({
+            sourceNodeId: srcId,
+            sourceField: '*',
+            targetField: sources.length === 1
+              ? 'data'
+              : sanitizeLabel(labelMap[srcId] || nds.find(n => n.id === srcId)?.data?.label || srcId),
+            transform: 'none',
+          }));
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              fullConfig: {
+                input: { mappings, requiredFields: [] },
+                component: node.data?.config || {},
+                output: { routes: [], defaultFields: [] },
+              },
+            },
+          };
+        }));
       }
     },
     [setNodes, setEdges],
@@ -587,7 +663,7 @@ function PipelineBuilderContent() {
       nds.map((node) => {
         if (node.id === selectedNode.id) {
           const componentConfig = fullConfig.component;
-          const label = componentConfig.name || node.data.label;
+          const label = componentConfig.title || componentConfig.name || node.data.label;
 
           return {
             ...node,
@@ -616,7 +692,7 @@ function PipelineBuilderContent() {
       nds.map((node) => {
         if (node.id === selectedNode.id) {
           const componentConfig = fullConfig.component;
-          const label = componentConfig.name || node.data.label;
+          const label = componentConfig.title || componentConfig.name || node.data.label;
 
           return {
             ...node,
@@ -889,6 +965,27 @@ function PipelineBuilderContent() {
               {isSimulating ? 'Simulating...' : 'Simulate'}
             </button>
 
+            {/* CRE: Deploy */}
+            <button
+              onClick={handleDeploy}
+              style={{
+                padding: '8px 16px',
+                background: '#059669',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '14px',
+              }}
+              title="Deploy CRE workflow"
+            >
+              <Rocket size={16} />
+              Deploy
+            </button>
+
             {/* AI Copilot */}
             <button
               onClick={() => setIsCopilotOpen((v) => !v)}
@@ -1043,6 +1140,17 @@ function PipelineBuilderContent() {
         nodes={nodes}
         edges={edges}
         onApplyActions={applyCopilotActions}
+      />
+
+      {/* Deployment Modal */}
+      <DeploymentModal
+        isOpen={isDeployModalOpen}
+        onClose={() => setIsDeployModalOpen(false)}
+        pipelineId={pipelineId}
+        pipelineName={currentPipeline?.name || 'Pipeline'}
+        isCreAuthenticated={isCreAuthenticated}
+        hasGeneratedCode={!!generatedCode}
+        hasSimulated={simLogs.length > 0 && !simError}
       />
 
       {/* CRE Login Modal */}
