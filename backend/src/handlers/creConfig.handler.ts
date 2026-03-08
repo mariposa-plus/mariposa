@@ -52,7 +52,7 @@ class CREConfigHandler {
 
       case 'wallet-signer': {
         const signerType = config.signerType || 'envVar';
-        const envVarName = config.envVarName || 'CRE_ETH_PRIVATE_KEY';
+        const envVarName = signerType === 'custom' ? 'CRE_ETH_PRIVATE_KEY' : (config.envVarName || 'CRE_ETH_PRIVATE_KEY');
         const hasKey = !!process.env[envVarName];
         return {
           success: true,

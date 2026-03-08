@@ -81,7 +81,10 @@ class CREWorkflowService {
     const httpNode = nodes.find((n: any) => n.type === 'http-fetch');
     if (httpNode) {
       const httpConfig = httpNode.data?.fullConfig?.component || httpNode.data?.config || {};
-      config.apiUrl = httpConfig.url || 'https://api.example.com/data';
+      const apiUrl = httpConfig.url?.trim();
+      if (apiUrl && /^https?:\/\/.+/.test(apiUrl)) {
+        config.apiUrl = apiUrl;
+      }
     }
 
     // Extract EVM config from chain/contract nodes

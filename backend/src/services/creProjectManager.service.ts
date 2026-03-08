@@ -422,6 +422,34 @@ class CREProjectManagerService {
   }
 
   /**
+   * Update the private key in a project's .env file (preserves other vars)
+   */
+  async updatePrivateKey(projectId: string, privateKey: string): Promise<void> {
+    const project = await CREProject.findById(projectId);
+    if (!project) throw new Error('CRE project not found');
+
+    const envPath = path.join(project.workspacePath, '.env');
+    let envContent = '';
+
+    if (fs.existsSync(envPath)) {
+      envContent = fs.readFileSync(envPath, 'utf-8');
+    }
+
+    // Normalize key format — ensure 0x prefix
+    const normalizedKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+
+    // Replace existing CRE_ETH_PRIVATE_KEY or append
+    if (envContent.includes('CRE_ETH_PRIVATE_KEY=')) {
+      envContent = envContent.replace(/CRE_ETH_PRIVATE_KEY=.*/,
+        `CRE_ETH_PRIVATE_KEY=${normalizedKey}`);
+    } else {
+      envContent += `CRE_ETH_PRIVATE_KEY=${normalizedKey}\n`;
+    }
+
+    fs.writeFileSync(envPath, envContent);
+  }
+
+  /**
    * Update project .env secrets
    */
   async updateSecrets(projectId: string, secrets: Record<string, string>): Promise<void> {
