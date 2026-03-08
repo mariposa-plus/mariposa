@@ -5,6 +5,7 @@ import { ComponentSchema, PipelineNode } from '@/types';
 import { ConfigFieldRenderer } from './ConfigFieldRenderer';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { AvailableVariable } from './PromptTemplateField';
+import { api } from '@/lib/api';
 
 interface GenericConfigFormProps {
   componentSchema: ComponentSchema;
@@ -24,6 +25,8 @@ export function GenericConfigForm({
   const [config, setConfig] = useState<Record<string, any>>(initialConfig);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [privateKeySaving, setPrivateKeySaving] = useState(false);
+  const [privateKeySaved, setPrivateKeySaved] = useState(initialConfig?.privateKeySaved || false);
 
   // Extract available variables from input mappings
   const availableVariables: AvailableVariable[] = useMemo(() => {
@@ -62,6 +65,11 @@ export function GenericConfigForm({
     // Immediately propagate to parent to avoid stale state issues
     onSave(newConfig);
 
+    // Reset privateKeySaved when signerType changes away from 'custom'
+    if (fieldName === 'signerType' && value !== 'custom') {
+      setPrivateKeySaved(false);
+    }
+
     setHasChanges(true);
 
     // Clear error for this field
@@ -71,6 +79,25 @@ export function GenericConfigForm({
         delete newErrors[fieldName];
         return newErrors;
       });
+    }
+  };
+
+  const handleFieldBlur = (fieldName: string) => {
+    if (fieldName === 'privateKey' && config.privateKey && config.signerType === 'custom') {
+      const pipelineId = window.location.pathname.split('/pipelines/')[1]?.split('/')[0];
+      if (!pipelineId) return;
+      setPrivateKeySaving(true);
+      api.put(`/cre/pipelines/${pipelineId}/private-key`, { key: config.privateKey })
+        .then(() => {
+          setPrivateKeySaved(true);
+          setPrivateKeySaving(false);
+          const cleanConfig = { ...config, privateKey: undefined, privateKeySaved: true };
+          onSave(cleanConfig);
+        })
+        .catch(() => {
+          setPrivateKeySaving(false);
+          setErrors((prev) => ({ ...prev, privateKey: 'Failed to save private key' }));
+        });
     }
   };
 
@@ -153,8 +180,9 @@ export function GenericConfigForm({
     const currentDepValue = config[depField];
 
     if (depValue) {
-      // Check for specific value
-      return String(currentDepValue) === depValue || currentDepValue === (depValue === 'true');
+      // Support comma-separated values: "method:POST,PUT,PATCH"
+      const allowedValues = depValue.split(',');
+      return allowedValues.some((v: string) => String(currentDepValue) === v || currentDepValue === (v === 'true'));
     } else {
       // Just check if field has a truthy value
       return !!currentDepValue;
@@ -212,17 +240,29 @@ export function GenericConfigForm({
       )}
 
       {/* Config Fields */}
-      <div style={{ maxHeight: '500px', overflowY: 'auto', paddingRight: '10px' }}>
+      <div>
         {visibleFields.map(([fieldName, fieldDef]) => (
-          <ConfigFieldRenderer
-            key={fieldName}
-            fieldName={fieldName}
-            fieldDef={fieldDef}
-            value={config[fieldName]}
-            onChange={(value) => handleFieldChange(fieldName, value)}
-            error={errors[fieldName]}
-            availableVariables={availableVariables}
-          />
+          <div key={fieldName}>
+            <ConfigFieldRenderer
+              fieldName={fieldName}
+              fieldDef={fieldDef}
+              value={config[fieldName]}
+              onChange={(value) => handleFieldChange(fieldName, value)}
+              onBlur={() => handleFieldBlur(fieldName)}
+              error={errors[fieldName]}
+              availableVariables={availableVariables}
+            />
+            {fieldName === 'privateKey' && privateKeySaving && (
+              <div style={{ fontSize: '12px', color: '#f59e0b', marginTop: '-12px', marginBottom: '12px' }}>
+                Saving private key...
+              </div>
+            )}
+            {fieldName === 'privateKey' && privateKeySaved && !privateKeySaving && (
+              <div style={{ fontSize: '12px', color: '#10b981', marginTop: '-12px', marginBottom: '12px' }}>
+                Private key saved to project .env
+              </div>
+            )}
+          </div>
         ))}
 
       </div>

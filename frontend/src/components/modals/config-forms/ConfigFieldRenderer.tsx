@@ -5,6 +5,12 @@ import { ConfigField } from '@/types';
 import { AlertCircle, Check, X } from 'lucide-react';
 import { PromptTemplateField, AvailableVariable } from './PromptTemplateField';
 import { TextTemplateField } from './TextTemplateField';
+import { CronExpressionField } from './CronExpressionField';
+import { HeadersBuilder } from './HeadersBuilder';
+import { DataTransformField } from './DataTransformField';
+import { ConditionBuilderField } from './ConditionBuilderField';
+import { ContractAddressField } from './ContractAddressField';
+import { EvmFunctionCallField } from './EvmFunctionCallField';
 
 // Lazy-load Monaco to avoid SSR issues
 const MonacoEditor = lazy(() => import('@monaco-editor/react').then(mod => ({ default: mod.default })));
@@ -32,6 +38,7 @@ interface ConfigFieldRendererProps {
   fieldDef: ConfigField;
   value: any;
   onChange: (value: any) => void;
+  onBlur?: () => void;
   error?: string;
   availableVariables?: AvailableVariable[];
 }
@@ -41,6 +48,7 @@ export function ConfigFieldRenderer({
   fieldDef,
   value,
   onChange,
+  onBlur,
   error,
   availableVariables = [],
 }: ConfigFieldRendererProps) {
@@ -142,7 +150,7 @@ export function ConfigFieldRenderer({
             onChange={(e) => onChange(e.target.value)}
             placeholder={fieldDef.placeholder}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onBlur={() => { setIsFocused(false); onBlur?.(); }}
             autoComplete="new-password"
             style={{
               width: '100%',
@@ -355,6 +363,48 @@ export function ConfigFieldRenderer({
           />
         );
 
+      case 'cron-expression':
+        return (
+          <CronExpressionField
+            value={value}
+            onChange={onChange}
+            error={error}
+          />
+        );
+
+      case 'headers':
+        return (
+          <HeadersBuilder
+            value={value}
+            onChange={onChange}
+            error={error}
+          />
+        );
+
+      case 'data-transform':
+        return (
+          <DataTransformField
+            value={value}
+            onChange={onChange}
+            error={error}
+          />
+        );
+
+      case 'condition-builder':
+        return (
+          <ConditionBuilderField
+            value={value}
+            onChange={onChange}
+            error={error}
+          />
+        );
+
+      case 'contract-address':
+        return <ContractAddressField value={value} onChange={onChange} error={error} />;
+
+      case 'evm-function-call':
+        return <EvmFunctionCallField value={value} onChange={onChange} error={error} />;
+
       default:
         return <div style={{ color: '#888' }}>Unsupported field type: {fieldDef.type}</div>;
     }
@@ -363,7 +413,7 @@ export function ConfigFieldRenderer({
   return (
     <div style={{ marginBottom: '20px' }}>
       {/* Label */}
-      {fieldDef.type !== 'text-template' && fieldDef.type !== 'prompt-template' && (
+      {fieldDef.type !== 'text-template' && fieldDef.type !== 'prompt-template' && fieldDef.type !== 'cron-expression' && fieldDef.type !== 'headers' && fieldDef.type !== 'data-transform' && fieldDef.type !== 'condition-builder' && fieldDef.type !== 'contract-address' && fieldDef.type !== 'evm-function-call' && (
         <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#fff' }}>
           {fieldDef.label}
           {fieldDef.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
@@ -374,7 +424,7 @@ export function ConfigFieldRenderer({
       {renderField()}
 
       {/* Help Text */}
-      {fieldDef.type !== 'text-template' && fieldDef.type !== 'prompt-template' && fieldDef.helpText && !error && (
+      {fieldDef.type !== 'text-template' && fieldDef.type !== 'prompt-template' && fieldDef.type !== 'cron-expression' && fieldDef.type !== 'headers' && fieldDef.type !== 'data-transform' && fieldDef.type !== 'contract-address' && fieldDef.type !== 'evm-function-call' && fieldDef.helpText && !error && (
         <div style={{ marginTop: '6px', fontSize: '12px', color: '#888', lineHeight: '1.4' }}>
           {fieldDef.helpText}
         </div>
@@ -394,7 +444,7 @@ export function ConfigFieldRenderer({
       )}
 
       {/* Error Message */}
-      {fieldDef.type !== 'text-template' && fieldDef.type !== 'prompt-template' && error && (
+      {fieldDef.type !== 'text-template' && fieldDef.type !== 'prompt-template' && fieldDef.type !== 'cron-expression' && fieldDef.type !== 'headers' && fieldDef.type !== 'data-transform' && fieldDef.type !== 'contract-address' && fieldDef.type !== 'evm-function-call' && error && (
         <div
           style={{
             marginTop: '6px',

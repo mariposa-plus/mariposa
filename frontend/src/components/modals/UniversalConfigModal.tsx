@@ -70,6 +70,15 @@ export function UniversalConfigModal({
     }
   }, [node]);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   if (!isOpen || !node) return null;
 
   const tabs: { id: TabType; label: string; count?: number }[] = [
